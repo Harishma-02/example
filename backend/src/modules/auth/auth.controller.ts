@@ -62,7 +62,7 @@ export class AuthController {
   }
 
   @UseGuards(RefreshTokenGuard)
-  @Post('refresh-token')   // ✅ renamed to avoid conflict
+  @Post('refresh-token')   
   refreshToken(@GetUser() user) {
     return this.authService.refresh(user);
   }

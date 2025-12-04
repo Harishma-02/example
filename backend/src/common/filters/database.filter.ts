@@ -6,7 +6,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
 
-    // Drizzle / PG errors
+
     if (exception.code === '23505') {
       // duplicate email
       return response.status(400).json({

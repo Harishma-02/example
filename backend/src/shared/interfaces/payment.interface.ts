@@ -1,6 +1,6 @@
 export interface IPayment {
-  id: string;                     // internal db id
-  stripePaymentIntentId: string;  // pi_xxx
+  id: string;                     
+  stripePaymentIntentId: string;  
   amount: number;
   currency: string;
   status: 'pending' | 'success' | 'failed';

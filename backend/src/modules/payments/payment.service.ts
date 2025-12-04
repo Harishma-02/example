@@ -10,10 +10,10 @@ export class PaymentService {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
   }
 
-  // 1. Create Payment Intent
+
   async createPaymentIntent(dto: CreatePaymentDto) {
     const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: dto.amount * 100,         // Convert to paisa
+      amount: dto.amount * 100,     
       currency: dto.currency,
       description: dto.description,
       automatic_payment_methods: { enabled: true },
@@ -26,7 +26,7 @@ export class PaymentService {
     };
   }
 
-  // 2. Retrieve Payment (Check status)
+
   async checkPaymentStatus(paymentIntentId: string) {
     const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
     return {
@@ -37,7 +37,6 @@ export class PaymentService {
     };
   }
 
-  // 3. Webhook Handler
   async handleWebhook(event: Stripe.Event) {
     switch (event.type) {
       case 'payment_intent.succeeded':

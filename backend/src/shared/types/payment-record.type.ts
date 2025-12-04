@@ -1,6 +1,6 @@
 export type PaymentRecordType = {
-  id: string;                       // Internal DB id
-  stripePaymentIntentId: string;    // pi_xxx
+  id: string;                      
+  stripePaymentIntentId: string;   
   amount: number;
   currency: string;
   status: 'pending' | 'success' | 'failed';

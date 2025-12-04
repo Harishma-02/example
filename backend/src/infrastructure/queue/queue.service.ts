@@ -10,6 +10,6 @@ export class QueueService {
   ) {}
 
   async addMailJob(data: any) {
-    await this.mailQueue.add('sendMail', data); // enqueue job
+    await this.mailQueue.add('sendMail', data); 
   }
 }

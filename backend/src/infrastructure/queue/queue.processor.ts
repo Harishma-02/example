@@ -9,7 +9,7 @@ export class MailProcessor extends WorkerHost {
   }
 
   async process(job: Job) {
-    // job.data should have: { to, subject, text, html }
+
     await this.mailService.sendMail(job.data);
   }
 }

@@ -11,7 +11,7 @@ import { Observable, TimeoutError, throwError, timeout, catchError } from 'rxjs'
 export class TimeoutInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     return next.handle().pipe(
-      timeout(5000), // 5 seconds
+      timeout(5000),
       catchError((err) => {
         if (err instanceof TimeoutError) {
           return throwError(() => new RequestTimeoutException('Request timeout'));

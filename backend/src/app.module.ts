@@ -14,7 +14,7 @@ import { MailModule } from './infrastructure/mail/mail.module';
 @Module({
   imports: [
     CacheModule.register({
-      ttl: 10_000, // 10 seconds
+      ttl: 10_000, 
       max: 100,
       isGlobal: true,
     }),

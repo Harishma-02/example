@@ -18,7 +18,7 @@ export class NotificationService {
       throw new Error('Twilio credentials are missing in .env');
     }
 
-    // ✅ FIXED: No more string | undefined error
+
     this.twilioClient = Twilio(sid, token);
   }
 

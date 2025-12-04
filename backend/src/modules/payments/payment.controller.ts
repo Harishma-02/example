@@ -8,19 +8,19 @@ import Stripe from 'stripe';
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  //  Create payment intent
+ 
   @Post('create')
   createPayment(@Body() dto: CreatePaymentDto) {
     return this.paymentService.createPaymentIntent(dto);
   }
 
-  //  Check payment status
+
   @Get('status/:id')
   checkStatus(@Param('id') id: string) {
     return this.paymentService.checkPaymentStatus(id);
   }
 
-  //  Webhook endpoint (FULLY FIXED)
+
   @Post('webhook')
   async webhook(
     @Req() req: Request,
@@ -29,7 +29,7 @@ export class PaymentController {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-    // HARD VALIDATION (Fixes TS2345)
+   
     if (!secretKey) {
       throw new Error('STRIPE_SECRET_KEY missing in .env');
     }
@@ -50,9 +50,9 @@ export class PaymentController {
 
     try {
       event = stripe.webhooks.constructEvent(
-        req['rawBody'] as Buffer,  // ✅ ensure raw body exists
-        signature,               // ✅ now always a string
-        webhookSecret,           // ✅ now always a string
+        req['rawBody'] as Buffer,  
+        signature,          
+        webhookSecret,       
       );
 
       await this.paymentService.handleWebhook(event);
