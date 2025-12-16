@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { MailerModule } from '@nestjs-modules/mailer';
+import {DatabaseService} from '../database/database.service'
 
 @Module({
   imports: [
+
     MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',

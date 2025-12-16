@@ -5,7 +5,7 @@ export default()=>({
         methods:'GET,HEAD,PUT,PATCH,POST,DELETE',
     },
     JWT:{
-        secret:process.env.JWT_SECRET ||'default_secret',
+        secret:process.env.JWT_SECRET ||'JWT_SECRET',
         expiresIn:'10m',
     },
     database:{

@@ -8,7 +8,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
 
 
     if (exception.code === '23505') {
-      // duplicate email
+
       return response.status(400).json({
         message: 'Email already exists',
       });

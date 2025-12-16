@@ -1,15 +1,13 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller,  Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-@ApiTags('App')
-@Controller()
-export class AppController {
-  constructor(private readonly appService: AppService) {}
+@ApiTags('Auth')
+@Controller('auth')
+export class AuthController {
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
-  }
-
+  @Post('login')
+  @ApiOperation({ summary: 'User login' })
+  login() {}
 }
+export class appController {};

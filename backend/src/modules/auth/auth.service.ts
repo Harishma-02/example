@@ -1,115 +1,75 @@
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { DatabaseService } from '../../infrastructure/database/db';
-import { users } from '../../infrastructure/database/schema';
-import { eq } from 'drizzle-orm';
-import { MailService} from 'src/infrastructure/mail/mail.service';
+import { UsersService } from '../users/users.service';
+import { User } from '../../shared/entities/user.entity';
 
 @Injectable()
 export class AuthService {
-
   constructor(
-    private readonly db: DatabaseService,
     private readonly jwt: JwtService,
-    private readonly mailService: MailService,
+    private readonly usersService: UsersService,
   ) {}
 
-
-  async signup(dto: any) {
-    const existing = await this.db.db
-      .select()
-      .from(users)
-      .where(eq(users.email, dto.email));
-
-    if (existing.length > 0) {
-      throw new BadRequestException('Email already exists');
-    }
+  // ----------------- SIGNUP -----------------
+  async signup(dto: { name?: string; email: string; password: string }) {
+    const existing: User | undefined = await this.usersService.findByEmail(dto.email);
+    if (existing) throw new BadRequestException('Email already exists');
 
     const hashed = await bcrypt.hash(dto.password, 10);
-
-    const [user] = await this.db.db
-      .insert(users)
-      .values({
-        email: dto.email,
-        password: hashed,
-        created_at: new Date(), 
-      })
-      .returning();
-
-
-    if (!user.email) {
-      throw new BadRequestException('Email missing after registration');
-    }
-
-    await this.mailService.sendWelcomeMail(user.email, 'User'); 
-
-    return {
-      message: 'User registered successfully',
-      user: { id: user.id, email: user.email },
-    };
+const user: User = this.usersService.createUser(
+  dto.name || '',
+  dto.email,
+  hashed,
+  'system'
+);
+    return { id: user.id, email: user.email };
   }
 
- 
-  async login(dto: any, meta: any) {
-    const [user] = await this.db.db
-      .select()
-      .from(users)
-      .where(eq(users.email, dto.email));
+  // ----------------- LOGIN -----------------
+  async login(dto: { email: string; password: string }) {
+    const user: User | undefined = await this.usersService.findByEmail(dto.email);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    if (!user) throw new BadRequestException('User not found');
+    const isValid = await bcrypt.compare(dto.password, user.password);
+    if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
-    const ok = await bcrypt.compare(dto.password, user.password);
-    if (!ok) throw new UnauthorizedException('Invalid credentials');
+    const payload = { username: user.email, sub: user.id };
 
-   
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET is missing in environment');
-    }
-
-    const accessToken = this.jwt.sign(
-      { sub: user.id, email: user.email },
-      { expiresIn: '10m', secret: jwtSecret },
-    );
-
-    const refreshToken = this.jwt.sign(
-      { sub: user.id },
-      { expiresIn: '7d', secret: jwtSecret },
-    );
+    const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+    const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
 
     return { accessToken, refreshToken };
   }
 
-
-  async rotateRefreshToken(refreshToken: string, meta: any) {
+  // ----------------- ROTATE REFRESH TOKEN -----------------
+  async rotateRefreshToken(refreshToken: string) {
     try {
-      const decoded = this.jwt.verify(refreshToken);
-
-      const jwtSecret = process.env.JWT_SECRET;
-      if (!jwtSecret) {
-        throw new Error('JWT_SECRET is missing');
-      }
-
-      const newAccessToken = this.jwt.sign(
-        { sub: decoded.sub },
-        { expiresIn: '10m', secret: jwtSecret },
+      const payload: any = this.jwt.verify(refreshToken);
+      const accessToken = this.jwt.sign(
+        { username: payload.username, sub: payload.sub },
+        { expiresIn: '15m' },
       );
-
-      return { accessToken: newAccessToken };
-
-    } catch (err) {
-      throw new UnauthorizedException('Invalid or expired refresh token');
+      const newRefreshToken = this.jwt.sign(
+        { username: payload.username, sub: payload.sub },
+        { expiresIn: '7d' },
+      );
+      return { accessToken, refreshToken: newRefreshToken };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-
+  // ----------------- REVOKE REFRESH TOKEN -----------------
   async revokeRefreshToken(refreshToken: string) {
-    return { message: 'Refresh token revoked' };
+    // Optionally, remove token from DB / blacklist
+    return { message: 'Logged out successfully' };
   }
 
- 
-  refresh(user: any) {
-    return { message: 'Token refreshed', user };
+  // ----------------- REFRESH ACCESS TOKEN -----------------
+  async refresh(user: { id: number; username: string }) {
+    const payload = { username: user.username, sub: user.id };
+    const accessToken = this.jwt.sign(payload, { expiresIn: '15m' });
+    return { accessToken };
   }
 }
