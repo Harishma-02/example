@@ -5,9 +5,6 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MailModule } from './infrastructure/mail/mail.module';
 import { ConfigModule } from '@nestjs/config';
-import { AuthController } from './modules/auth/auth.controller';
-import { AuthService } from './modules/auth/auth.service';
-import { JwtService } from '@nestjs/jwt';
 import { DatabaseModule } from './infrastructure/database/db.module';
 
 @Module({
@@ -23,8 +20,6 @@ import { DatabaseModule } from './infrastructure/database/db.module';
     UsersModule,
     AuthModule,
   ],
-  providers: [AppService , AuthService,JwtService],
-    controllers: [AuthController],
-  exports: [AuthService],
+  providers: [AppService], 
 })
 export class AppModule {}

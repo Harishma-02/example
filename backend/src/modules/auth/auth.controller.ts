@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Req,
-  BadRequestException,
-  Get,
-  UseGuards,
-} from '@nestjs/common';
+import {  Controller,  Post,  Body,  Req,  BadRequestException,  Get,  UseGuards,} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from '../users/dto/login.dto';
@@ -18,43 +10,36 @@ import { GetUser } from '../../common/decorators/get-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // ---------- SIGNUP ----------
   @Post('signup')
-  async signup(@Body() dto: CreateUserDto) {
-    const result = await this.authService.signup(dto);
+  async signup(@Body() dto: { name: string; email: string; password: string }) {
+    const user = await this.authService.signup(dto);
     return {
       success: true,
       timestamp: new Date().toISOString(),
-      data: result,
+      data: { user },
     };
   }
 
-  // ---------- LOGIN ----------
   @Post('login')
-  async login(@Body() dto: LoginDto) {
-    const tokens = await this.authService.login(dto);
+  async login(@Body() dto: { email: string; password: string }) {
+    const user = await this.authService.login(dto);
     return {
       success: true,
       timestamp: new Date().toISOString(),
-      data: tokens,
+      data: { user },
     };
   }
 
   // ---------- REFRESH USING TOKEN ----------
-  @Post('refresh')
-  async refresh(@Body('refreshToken') refreshToken: string) {
-    if (!refreshToken) {
-      throw new BadRequestException('refreshToken required');
-    }
-
-    const tokens = await this.authService.rotateRefreshToken(refreshToken);
-
-    return {
-      success: true,
-      timestamp: new Date().toISOString(),
-      data: tokens,
-    };
+ @Post('refresh')
+async refresh(@Body('refreshToken') refreshToken: string) {
+  if (!refreshToken) {
+    throw new BadRequestException('refreshToken required');
   }
+
+  return this.authService.rotateRefreshToken(refreshToken);
+}
+
 
   // ---------- LOGOUT ----------
   @Post('logout')
@@ -77,8 +62,6 @@ export class AuthController {
   @Get('profile')
   getProfile(@GetUser() user: any) {
     return {
-      success: true,
-      timestamp: new Date().toISOString(),
       data: user,
     };
   }

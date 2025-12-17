@@ -1,8 +1,6 @@
-export interface User {
+export class User {
   id: number;
+  name: string;
   email: string;
-  password: string;
-  name?: string;
-  createAt: Date;  
-  updatedAt?: Date;
+  password: string; // hashed password
 }
