@@ -1,25 +1,46 @@
-import {  Controller,  Post,  Body,  Req,  BadRequestException,  Get,  UseGuards,} from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, Get, UseGuards, Patch, Param, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from '../users/dto/create-user.dto';
-import { LoginDto } from '../users/dto/login.dto';
+import { UsersService } from '../users/users.service';
+import { SignupDto } from '../users/dto/signup.dto';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RefreshTokenGuard } from 'src/common/guards/refresh-token.guard';
 import { GetUser } from '../../common/decorators/get-user.decorator';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
-  @Post('signup')
-  async signup(@Body() dto: { name: string; email: string; password: string }) {
-    const user = await this.authService.signup(dto);
-    return {
-      success: true,
-      timestamp: new Date().toISOString(),
-      data: { user },
-    };
+  // ---------- GET ALL USERS ----------
+  @Get('users')
+  async getUsers() {
+    return this.usersService.findAll();
   }
 
+
+    @Patch('users/:id')
+  async updateUser(
+    @Param('id') id: string,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.usersService.updateUser(Number(id), dto);
+  }
+
+   @Delete('users/:id')
+  async deleteUser(@Param('id') id: string) {
+    return this.usersService.deleteUser(Number(id));
+  }
+  
+  // ---------- SIGNUP ----------
+ @Post('signup')
+signup(@Body() dto: SignupDto) {
+  return this.authService.signup(dto);
+}
+
+  // ---------- LOGIN ----------
   @Post('login')
   async login(@Body() dto: { email: string; password: string }) {
     const user = await this.authService.login(dto);
@@ -31,25 +52,17 @@ export class AuthController {
   }
 
   // ---------- REFRESH USING TOKEN ----------
- @Post('refresh')
-async refresh(@Body('refreshToken') refreshToken: string) {
-  if (!refreshToken) {
-    throw new BadRequestException('refreshToken required');
+  @Post('refresh')
+  async refresh(@Body('refreshToken') refreshToken: string) {
+    if (!refreshToken) throw new BadRequestException('refreshToken required');
+    return this.authService.rotateRefreshToken(refreshToken);
   }
-
-  return this.authService.rotateRefreshToken(refreshToken);
-}
-
 
   // ---------- LOGOUT ----------
   @Post('logout')
   async logout(@Body('refreshToken') refreshToken: string) {
-    if (!refreshToken) {
-      throw new BadRequestException('refreshToken required');
-    }
-
+    if (!refreshToken) throw new BadRequestException('refreshToken required');
     await this.authService.revokeRefreshToken(refreshToken);
-
     return {
       success: true,
       timestamp: new Date().toISOString(),
@@ -71,7 +84,6 @@ async refresh(@Body('refreshToken') refreshToken: string) {
   @Post('refresh-token')
   async refreshWithGuard(@GetUser() user: any) {
     const token = await this.authService.refresh(user);
-
     return {
       success: true,
       timestamp: new Date().toISOString(),

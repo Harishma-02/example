@@ -2,7 +2,7 @@ import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
-import { User } from '../../shared/entities/user.entity';
+import { SignupDto } from '../users/dto/signup.dto';
 
 @Injectable()
 export class AuthService {
@@ -10,61 +10,44 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly usersService: UsersService,
   ) {}
+  
 
   // ----------------- SIGNUP -----------------
-async signup(dto: { name: string; email: string; password: string }) {
-  const existing = await this.usersService.findByEmail(dto.email);
-  if (existing) throw new BadRequestException('Email already exists');
+ async signup(dto: SignupDto) {
+  const existingUser = await this.usersService.findByEmail(dto.email);
+  if (existingUser) {
+    throw new BadRequestException('Email already in use');
+  }
 
-  const hashed = await bcrypt.hash(dto.password, 10); // hash the password
+  const user = await this.usersService.createUser({
+    name: dto.name,
+    email: dto.email,
+    password: dto.password,
+    createdBy: 0,
+  });
 
-  const user = await this.usersService.createUser(
-    dto.name,
-    dto.email,
-    hashed,
-    'system',
-  );
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-  };
+  return user;
 }
-
-
-
-
   // ----------------- LOGIN -----------------
-async login(dto: { email: string; password: string }) {
-  console.log('Login attempt for email:', dto.email); 
+  async login(dto: { email: string; password: string }) {
+    const user = await this.usersService.findByEmail(dto.email);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
-  const user = await this.usersService.findByEmail(dto.email);
-  console.log('User from DB:', user); 
+    const isValid = await bcrypt.compare(dto.password, user.password);
+    if (!isValid) throw new UnauthorizedException('Invalid credentials');
 
-  if (!user) throw new UnauthorizedException('Invalid credentials');
+    const payload = { username: user.email, sub: user.id };
+    const accessToken = this.jwt.sign(payload, { expiresIn: '10m' });
+    const refreshToken = this.jwt.sign(payload, { expiresIn: '1d' });
 
-  const isValid = await bcrypt.compare(dto.password, user.password);
-  console.log('Stored hashed password:', user.password); 
-  console.log('Password match:', isValid); 
-
-  if (!isValid) throw new UnauthorizedException('Invalid credentials');
-
-  const payload = { username: user.email, sub: user.id };
-  const accessToken = this.jwt.sign(payload, { expiresIn: '10m' });
-  const refreshToken = this.jwt.sign(payload, { expiresIn: '1d' });
-
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    accessToken,
-    refreshToken,
-  };
-}
-
-
-
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      accessToken,
+      refreshToken,
+    };
+  }
 
   // ----------------- ROTATE REFRESH TOKEN -----------------
   async rotateRefreshToken(refreshToken: string) {
@@ -90,7 +73,7 @@ async login(dto: { email: string; password: string }) {
   // ----------------- REVOKE REFRESH TOKEN -----------------
   async revokeRefreshToken(refreshToken: string) {
     // Optionally remove token from DB / blacklist
-    return { message: 'Logged out successfully' }; // only message
+    return { message: 'Logged out successfully' };
   }
 
   // ----------------- REFRESH ACCESS TOKEN -----------------

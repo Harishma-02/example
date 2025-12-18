@@ -1,31 +1,35 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt';
 import { users } from '../infrastructure/database/schema';
 
 const pool = new Pool({
   host: 'localhost',
   port: 5432,
-  user: 'your_db_user',
-  password: 'your_db_password',
-  database: 'your_db_name',
+  user: 'postgres',
+  password: 'harisraj',
+  database: 'postgres',
 });
 
 const db = drizzle(pool);
 
 async function main() {
+
   const hashedPassword = await bcrypt.hash('vignesh123', 10);
 
-  const user = await db.insert(users).values({
-    email: 'vignesh@example.com',
-    password: hashedPassword,
-    created_at: new Date(),
-    updated_at: new Date(),
-  }).returning();
+  await db.insert(users).values({
+  email: 'vignesh@example.com',
+  password: hashedPassword,
+  created_at: new Date(),
+  updated_at: new Date(),
+});
 
-  console.log('User created:', user);
+
+  console.log('User inserted successfully');
 }
 
 main()
-  .catch(console.error)
-  .finally(() => pool.end());
+  .catch((err) => console.error(err))
+  .finally(async () => {
+    await pool.end();
+  });

@@ -7,11 +7,11 @@ export class UsersController {
 
   @Post('profile')
   create(@Body() body: any) {
-    return this.usersService.createUser(
-      body.name,
-      body.email,
-      body.password,
-      'system'
-    );
-  }
+    return this.usersService.createUser({
+  name: body.name,
+  email: body.email,
+  password: body.password,
+  createdBy: 0,  
+});
+}
 }
